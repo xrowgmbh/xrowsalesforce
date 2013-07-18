@@ -1,0 +1,52 @@
+ bin/test.php           |  2 +-
+ classes/Salesforce.php | 12 ++++++------
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/bin/test.php b/bin/test.php
+index 04d779b..6bac6e5 100644
+--- a/bin/test.php
++++ b/bin/test.php
+@@ -1,6 +1,6 @@
+ <?php
+ 
+-use XROW\Salesforce\Salesforce;
++//use XROW\Salesforce\Salesforce;
+ 
+ $connection = Salesforce::factory();
+ 
+diff --git a/classes/Salesforce.php b/classes/Salesforce.php
+index 414c3af..14a03d2 100644
+--- a/classes/Salesforce.php
++++ b/classes/Salesforce.php
+@@ -1,9 +1,9 @@
+ <?php
+ 
+-namespace XROW\Salesforce;
++//namespace XROW\Salesforce;
+ 
+-use eZINI;
+-use SforceEnterpriseClient;
++//use eZINI;
++//use SforceEnterpriseClient;
+ 
+ class Salesforce
+ {
+@@ -21,15 +21,15 @@ class Salesforce
+             return self::$connection;
+         }
+         $ini = eZINI::instance( "salesforce.ini" );
+-        
++
+         $file = "extension/xrowsalesforce/share/salesforce.enterprise.wsdl.xml";
+-        
++
+         /*
+          * $file = eZSys::cacheDirectory() . "/salesforce.enterprise.wsdl.xml"; if (!file_exists($file)) { file_put_contents( $file, file_get_contents( "https://cs10.salesforce.com/soap/wsdl.jsp?type=*" ) ); echo "$file"; }
+          */
+         self::$connection = new SforceEnterpriseClient();
+         self::$connection->createConnection( $file );
+-        
++
+         if ( self::$session and self::$location )
+         {
+             

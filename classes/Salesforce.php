@@ -1,9 +1,9 @@
 <?php
 
-namespace XROW\Salesforce;
+//namespace XROW\Salesforce;
 
-use eZINI;
-use SforceEnterpriseClient;
+//use eZINI;
+//use SforceEnterpriseClient;
 
 class Salesforce
 {
@@ -21,15 +21,15 @@ class Salesforce
             return self::$connection;
         }
         $ini = eZINI::instance( "salesforce.ini" );
-        
+
         $file = "extension/xrowsalesforce/share/salesforce.enterprise.wsdl.xml";
-        
+
         /*
          * $file = eZSys::cacheDirectory() . "/salesforce.enterprise.wsdl.xml"; if (!file_exists($file)) { file_put_contents( $file, file_get_contents( "https://cs10.salesforce.com/soap/wsdl.jsp?type=*" ) ); echo "$file"; }
          */
         self::$connection = new SforceEnterpriseClient();
         self::$connection->createConnection( $file );
-        
+
         if ( self::$session and self::$location )
         {
             
