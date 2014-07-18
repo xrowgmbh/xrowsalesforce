@@ -7,17 +7,47 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
 
     public function getCampaigns()
     {
+        $salesforceini = eZINI::instance('salesforce.ini');
+        $whereStr = '';
+        $sortCampaignDropDown = array();
+        if( $salesforceini->hasVariable( 'Settings', 'WhereStrings' ) )
+        {
+            $filter = $salesforceini->variable( 'Settings', 'WhereStrings' );
+            if( isset( $filter['Campaign'] ) )
+            {
+                $whereStr = " " . $filter['Campaign'];
+            }
+        }
         try
         {
             $connection = self::getConnection();
-            $query = "SELECT Id, Name FROM Campaign";
+            $query = "SELECT Id, Name, Status, Type FROM Campaign" . $whereStr;
             $response = $connection->query( $query );
             $campaignArray = array();
             if( isset( $response->records ) && is_array( $response->records ) && count( $response->records ) > 0 )
             {
-                foreach( $response->records as $key => $record ) 
+                // get types
+                foreach( $response->records as $record )
                 {
-                    $campaignArray[$record->Id] = $record->Name;
+                    $sortCampaignsDropDown[$record->Type] = $record->Type;
+                }
+                
+                if( count( $sortCampaignsDropDown ) > 0 )
+                {
+                    $campaignArray['optiongroups'] = array();
+                    foreach( $sortCampaignsDropDown as $sortCampaignDropDown )
+                    {
+                        $tmpCampaignArray = array();
+                        foreach( $response->records as $key => $record )
+                        {
+                            if( $record->Type == $sortCampaignDropDown )
+                            {
+                                $tmpCampaignArray[$record->Id] = $record->Name;
+                            }
+                        }
+                        $campaignArray['optiongroups'][] = array( 'optiongroupname' => $sortCampaignDropDown,
+                                                                  'campaigns' => $tmpCampaignArray );
+                    }
                 }
             }
             return $campaignArray;
@@ -32,53 +62,63 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
     {
         if( self::$fields === null )
         {
+            $salesforceini = eZINI::instance('salesforce.ini');
             try
             {
                 $connection = self::getConnection();
                 $fieldsArray = array();
-                $sObject = $connection->describeSObjects( array( 'Lead' ) );
-                if( isset( $sObject[0] ) )
+                $getFieldsFromClass = array( 'Lead' );
+                if( $salesforceini->hasVariable( 'Settings', 'GetFieldsFromClass' ) )
                 {
-                    $sObject = $sObject[0];
-                    $fieldsArray = array();
-                    if( isset( $sObject ) && isset( $sObject->fields ) && is_array( $sObject->fields ) && count( $sObject->fields ) > 0 )
-                    {
-                        $salesforceini = eZINI::instance('salesforce.ini');
-                        if( $salesforceini->hasVariable( 'Settings', 'LoadFieldsInFormGenerator' ) )
-                        {
-                            $showOnlyFields = $salesforceini->variable( 'Settings', 'LoadFieldsInFormGenerator' );
-                            foreach( $sObject->fields as $field ) 
-                            {
-                                if( $field->deprecatedAndHidden === false && in_array( $field->name, $showOnlyFields ) )
-                                {
-                                    $field = (array)$field;
-                                    if( $field['type'] == 'picklist' )
-                                    {
-                                        $tmpPicklist = $field['picklistValues'];
-                                        unset( $field['picklistValues'] );
-                                        foreach( $tmpPicklist as $picklistValue )
-                                        {
-                                            $field['picklistValues'][] = (array)$picklistValue;
-                                        }
-                                    }
-                                    $fieldsArray[] = (array)$field;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            foreach( $sObject->fields as $field ) 
-                            {
-                                if( $field->deprecatedAndHidden === false )
-                                {
-                                    $fieldsArray[] = (array)$field;
-                                }
-                            }
-                        }
-                    }
-                    usort( $fieldsArray, array( "xrowSalesForceCRMPlugin", "cmp" ) );
+                    $getFieldsFromClass = $salesforceini->variable( 'Settings', 'GetFieldsFromClass' );
                 }
-                self::$fields = $fieldsArray;
+                foreach( $getFieldsFromClass as $class )
+                {
+                    $sObject = $connection->describeSObjects( array( $class ) );
+                    if( isset( $sObject[0] ) )
+                    {
+                        $sObject = $sObject[0];
+                        $fieldsArray = array();
+                        if( isset( $sObject ) && isset( $sObject->fields ) && is_array( $sObject->fields ) && count( $sObject->fields ) > 0 )
+                        {
+                            if( $salesforceini->hasGroup( 'ShowOnlyFieldsInFormGenerator_' . $class ) )
+                            {
+                                $showOnlyFields = $salesforceini->variable( 'ShowOnlyFieldsInFormGenerator_' . $class, 'ShowOnlyFieldsInFormGenerator' );
+                                foreach( $sObject->fields as $field ) 
+                                {
+                                    if( $field->deprecatedAndHidden === false && in_array( $field->name, $showOnlyFields ) )
+                                    {
+                                        $field = (array)$field;
+                                        if( $field['type'] == 'picklist' )
+                                        {
+                                            $tmpPicklist = $field['picklistValues'];
+                                            unset( $field['picklistValues'] );
+                                            foreach( $tmpPicklist as $picklistValue )
+                                            {
+                                                $field['picklistValues'][] = (array)$picklistValue;
+                                            }
+                                        }
+                                        $fieldsArray[] = (array)$field;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                foreach( $sObject->fields as $field ) 
+                                {
+                                    if( $field->deprecatedAndHidden === false )
+                                    {
+                                        $fieldsArray[] = (array)$field;
+                                    }
+                                }
+                            }
+                        }
+                        usort( $fieldsArray, array( "xrowSalesForceCRMPlugin", "cmp" ) );
+                    }
+                    $classFieldsArray[$class] = $fieldsArray;
+                }
+                #die(var_dump($classFieldsArray['CampaignMember']));
+                self::$fields = $classFieldsArray;
             }
             catch( Exception $e )
             {
@@ -108,17 +148,18 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
         if( strpos( $data['type'], 'picklist' ) !== false )
         {
             $data['option_array'] = array();
-            if( $http->hasPostVariable( 'XrowFormElementCRMField' . $id . $data['name'] ) )
+            $suffix = $id . $data['crmclass'] . $data['name'];
+            if( $http->hasPostVariable( 'XrowFormElementCRMField' . $suffix ) )
             {
-                $pickList = $http->postVariable( 'XrowFormElementCRMField' . $id . $data['name'] );
+                $pickList = $http->postVariable( 'XrowFormElementCRMField' . $suffix );
                 $options = array();
                 foreach ( $pickList as $optKey => $pickListValue )
                 {
-                    $explodePickListValue = explode( ':', $pickListValue );
+                    $explodePickListValue = explode( '|', $pickListValue );
                     $item = array( 'value' => $explodePickListValue[0], 'name' => $explodePickListValue[1], 'def' => false );
-                    if( $http->hasPostVariable( 'XrowFormElementCRMField' . $id . $data['name'] . 'Default' ) )
+                    if( $http->hasPostVariable( 'XrowFormElementCRMField' . $suffix . 'Default' ) )
                     {
-                        $crmFieldValueDefault = $http->postVariable( 'XrowFormElementCRMField' . $id . $data['name'] . 'Default' );
+                        $crmFieldValueDefault = $http->postVariable( 'XrowFormElementCRMField' . $suffix . 'Default' );
                         if( $crmFieldValueDefault == $explodePickListValue[0] )
                         {
                             $item['def'] = true;
@@ -132,7 +173,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
         return $data;
     }
 
-    public function setAttributeDataForCollectCRMField( $content, $key, $item, $inputContentCollection, $contentobject_id )
+    public function setAttributeDataForCollectCRMField( $content, $key, $item, $inputContentCollection, $contentobject_id, $trans )
     {
         switch ( $item['type'] )
         {
@@ -148,7 +189,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                 {
                     $content['form_elements'][$key]['error'] = true;
                     $content['has_error'] = true;
-                    $content['error_array'][] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Input required." );
+                    $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Input required." );
                 }
                 $content['form_elements'][$key]['def'] = $data;
             }break;
@@ -165,7 +206,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     {
                         $content['form_elements'][$key]['error'] = true;
                         $content['has_error'] = true;
-                        $content['error_array'][] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Input required." );
+                        $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Input required." );
                     }
                     elseif( $item['val'] == true )
                     {
@@ -173,7 +214,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                         {
                             $content['form_elements'][$key]['error'] = true;
                             $content['has_error'] = true;
-                            $content['error_array'][] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "E-mail address is not valid." );
+                            $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "E-mail address is not valid." );
                         }
                         elseif( $item['unique'] == true )
                         {
@@ -181,10 +222,10 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                             {
                                 $content['form_elements'][$key]['error'] = true;
                                 $content['has_error'] = true;
-                                $content['error_array'][] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Your email was already submitted to us. You can't use the form twice." );
-                            }       
+                                $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Your email was already submitted to us. You can't use the form twice." );
+                            }
                         }
-                    }    
+                    }
                 }
                 elseif ( $item['val'] == true && $data != '' )
                 {
@@ -192,7 +233,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     {
                         $content['form_elements'][$key]['error'] = true;
                         $content['has_error'] = true;
-                        $content['error_array'][] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "E-mail address is not valid." );
+                        $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "E-mail address is not valid." );
                     }
                     elseif( $item['unique'] == true ) 
                     {
@@ -200,8 +241,8 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                         {
                             $content['form_elements'][$key]['error'] = true;
                             $content['has_error'] = true;
-                            $content['error_array'][] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Your email was already submitted to us. You can't use the form twice." );
-                        }                             
+                            $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Your email was already submitted to us. You can't use the form twice." );
+                        }
                     }
                 }
                 elseif( $item['unique'] == true && $data != '' )
@@ -210,7 +251,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     {
                         $content['form_elements'][$key]['error'] = true;
                         $content['has_error'] = true;
-                        $content['error_array'][] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Your email was already submitted to us. You can't use the form twice." );
+                        $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Your email was already submitted to us. You can't use the form twice." );
                     }   
                 }
                 $content['form_elements'][$key]['def'] = $data;
@@ -228,7 +269,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     {
                         $content['form_elements'][$key]['error'] = true;
                         $content['has_error'] = true;
-                        $content['error_array'][] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "You need to select this checkbox." );
+                        $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "You need to select this checkbox." );
                     }
                 }
                 $content['form_elements'][$key]['def'] = $data;
@@ -247,7 +288,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     {
                         $content['form_elements'][$key]['error'] = true;
                         $content['has_error'] = true;
-                        $content['error_array'][] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Input required." );
+                        $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Input required." );
                     }
                     else
                     {
@@ -261,7 +302,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     {
                         $content['form_elements'][$key]['error'] = true;
                         $content['has_error'] = true;
-                        $content['error_array'][] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Please enter a valid phone number." );
+                        $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Please enter a valid phone number." );
                     }
                 }
                 $content['form_elements'][$key]['def'] = $data;
@@ -288,7 +329,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                         {
                             $content['form_elements'][$key]['error'] = true;
                             $content['has_error'] = true;
-                            $content['error_array'][] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Please select at least one option." );
+                            $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Please select at least one option." );
                         }
                     }
                 }
@@ -298,7 +339,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     {
                         $content['form_elements'][$key]['error'] = true;
                         $content['has_error'] = true;
-                        $content['error_array'][] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Please select at least one option." );
+                        $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Please select at least one option." );
                     }
                 }
             }break;
@@ -315,11 +356,32 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
             if( isset( $objectAttribute->Content['form_elements'] ) )
             {
                 $form_elements = $objectAttribute->Content['form_elements'];
-                $lead = new stdClass;
+                $classObjects = array();
                 $foundCRMField = false;
                 $ini = eZINI::instance( 'salesforce.ini' );
+                $exportFieldIntoFieldArrayTmp = $exportFieldIntoFieldArray = array();
+                if( $ini->hasVariable( 'Settings', 'ExportFieldIntoField' ) )
+                {
+                    $exportFieldIntoFieldArrayTmp = $ini->variable( 'Settings', 'ExportFieldIntoField' );
+                    foreach( $exportFieldIntoFieldArrayTmp as $exportFieldIntoField )
+                    {
+                        if( $ini->hasGroup( 'ExportFieldIntoField_' . $exportFieldIntoField ) )
+                        {
+                            $exportFieldIntoFieldArray[$exportFieldIntoField] = $ini->group( 'ExportFieldIntoField_' . $exportFieldIntoField );
+                        }
+                    }
+                }
                 foreach( $form_elements as $item )
                 {
+                    $crmClass = $item['crmclass'];
+                    if( count( $exportFieldIntoFieldArray ) > 0 && isset( $exportFieldIntoFieldArray[$item['name']] ) )
+                    {
+                        if( isset( $exportFieldIntoFieldArray[$item['name']]['ToClass'] ) )
+                            $crmClass = $exportFieldIntoFieldArray[$item['name']]['ToClass'];
+                        $item['name'] = $exportFieldIntoFieldArray[$item['name']]['ToField'];
+                    }
+                    if( !isset( $classObjects[$crmClass] ) || ( isset( $classObjects[$crmClass] ) && !is_object( $classObjects[$crmClass] ) ) )
+                        $classObjects[$crmClass] = new stdClass();
                     switch ( $item['type'] )
                     {
                         case "crmfield:string":
@@ -329,7 +391,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                         case "crmfield:textarea":
                         {
                             $name = $item['name'];
-                            $lead->$name = $item['def'];
+                            $classObjects[$crmClass]->$name = $item['def'];
                             $foundCRMField = true;
                         }break;
                         case "crmfield:picklist":
@@ -339,7 +401,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                                 if ( $optItem['def'] )
                                 {
                                     $name = $item['name'];
-                                    $lead->$name = $optItem['value'];
+                                    $classObjects[$crmClass]->$name = $optItem['value'];
                                     $foundCRMField = true;
                                     break;
                                 }
@@ -347,28 +409,36 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                         }break;
                     }
                 }
-                if( $foundCRMField && !isset( $lead->Company ) )
+                if( $foundCRMField && ( !isset( $classObjects['Lead']->Company ) || ( isset( $classObjects['Lead']->Company ) && ( $classObjects['Lead']->Company === null || $classObjects['Lead']->Company == '' ) ) ) )
                 {
                     // Company ist ein Pflichtfeld. Soll hier nachträglich gesetzt werden, falls es noch nicht gefüllt wurde
-                    $lead->Company = 'nicht angegeben';
+                    $classObjects['Lead']->Company = 'nicht angegeben';
                 }
                 if( $foundCRMField )
                 {
-                    $result = self::saveStandardObjectData( $lead, 'Lead', 'create' );
-                    if( $result->success !== false )
+                    if( isset( $classObjects['Lead'] ) )
                     {
-                        $leadmember = new stdClass;
-                        $leadmember->CampaignId = $campaign_id;
-                        $leadmember->LeadId = $result->id;
-                        $result_member = self::saveStandardObjectData( $leadmember, 'CampaignMember', 'create' );
-                        if( $result_member->success === false )
+                        $result = self::saveStandardObjectData( $classObjects['Lead'], 'Lead', 'create' );
+                        if( $result->success !== false )
                         {
+                            if( isset( $classObjects['CampaignMember'] ) )
+                                $leadmember = $classObjects['CampaignMember'];
+                            else
+                                $leadmember = new stdClass;
+                            $leadmember->CampaignId = $campaign_id;
+                            $leadmember->LeadId = $result->id;
+                            $result_member = self::saveStandardObjectData( $leadmember, 'CampaignMember', 'create' );
+                            if( $result_member->success === false )
+                            {
+                                eZDebug::writeError( $result_member, __METHOD__ );
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            eZDebug::writeError( $result, __METHOD__ );
                             return false;
                         }
-                    }
-                    else
-                    {
-                        return false;
                     }
                 }
             }
@@ -380,7 +450,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
         if( $StandardObject && $class != '' && ( $type == 'create' || $type == 'update' ) )
         {
             $ini = eZINI::instance( 'salesforce.ini' );
-            $exportFieldIntoField = array();
+            /*$exportFieldIntoField = array();
             if( $ini->hasVariable( 'Settings', 'ExportFieldIntoField' ) )
             {
                 $exportFieldIntoField = $ini->variable( 'Settings', 'ExportFieldIntoField' );
@@ -393,7 +463,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                         $StandardObject->$exportFieldIntoField[$StandardObjectItemName] = $value;
                     }
                 }
-            }
+            }*/
             if( $ini->hasVariable( 'UTMSettings', 'SaveInClass' ) )
             {
                 $SaveInClass = $ini->variable( 'UTMSettings', 'SaveInClass' );

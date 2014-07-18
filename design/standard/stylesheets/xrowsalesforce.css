@@ -1,0 +1,15 @@
+.xrowsaleforce-picklist-checkbox label {
+    padding-top: 5px;
+    width: 60%;
+    float: left;
+    border-bottom: 1px dotted #CCCCCC;
+}
+.xrowsaleforce-optionnavi {
+    height: 40px;
+    margin-top: 10px;
+}
+.xrowsaleforce-optionnavi span {
+    width: 61%;
+    display: block;
+    float: left;
+}

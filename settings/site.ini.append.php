@@ -1,6 +1,6 @@
 <?php /* #?ini charset="utf-8"?
 
-[Settings]
-
+[RegionalSettings]
+TranslationExtensions[]=xrowsalesforce
 
 */ ?>
