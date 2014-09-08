@@ -471,7 +471,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                 {
                     if( $ini->hasVariable( 'UTMSettings_' . $SaveInClass, 'SaveFields' ) )
                     {
-                        $utmData = new GA_Parse( $_COOKIE );
+                        $utmData = new GA_Parse();
                         $utmSaveFieldIntoFields = $ini->variable( 'UTMSettings_' . $SaveInClass, 'SaveFields' );
                         foreach( $utmSaveFieldIntoFields as $utmSaveFieldIntoFieldKey => $utmSaveFieldIntoField )
                         {

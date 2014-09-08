@@ -30,7 +30,7 @@ class GA_Parse
     var $times_visited;             // Times visited
     var $pages_viewed;              // Pages viewed in current session
 
-    function __construct($_COOKIE) {
+    function __construct() {
         // If we have the cookies we can go ahead and parse them.
         if (isset($_COOKIE["__utma"]) and isset($_COOKIE["__utmz"])) {
             $this->ParseCookies();
