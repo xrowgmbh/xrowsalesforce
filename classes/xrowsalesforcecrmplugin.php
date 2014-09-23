@@ -347,7 +347,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
         return $content;
     }
 
-    public static function sendExportData( $objectAttribute )
+    public static function sendExportData( $collection, $objectAttribute )
     {
         // export only if campaign ID is set
         if( isset( $objectAttribute->Content['campaign_id'] ) && (int)$objectAttribute->Content['campaign_id'] > 0 && $objectAttribute->Content['campaign_id'] != '' )
@@ -418,7 +418,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                 {
                     if( isset( $classObjects['Lead'] ) )
                     {
-                        $result = self::saveStandardObjectData( $classObjects['Lead'], 'Lead', 'create' );
+                        $result = self::saveStandardObjectData( $classObjects['Lead'], 'Lead', 'create', $objectAttribute, $collection );
                         if( $result->success !== false )
                         {
                             if( isset( $classObjects['CampaignMember'] ) )
@@ -445,7 +445,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
         }
     }
 
-    public static function saveStandardObjectData( $StandardObject, $class, $type )
+    public static function saveStandardObjectData( $StandardObject, $class, $type, $ContentObject = false, $collection = false )
     {
         if( $StandardObject && $class != '' && ( $type == 'create' || $type == 'update' ) )
         {
@@ -488,6 +488,16 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
             {
                 $connection = self::getConnection();
                 $result = $connection->$type( array( $StandardObject ), $class );
+                
+                if( $salesforceini->hasVariable( 'Settings', 'AlwaysLog' ) )
+                {
+                    if ( $salesforceini->variable( 'Settings', 'AlwaysLog' ) == "true" )
+                    {
+                        $log = "Collection-ID:" . $collection->ID ." ContentobjectID: " .  $ContentObject->ContentObjectID . " Campaign ID: " . $ContentObject->Content["campaign_id"];
+                        eZLog::write($log, 'salesforce_transactions.log');
+                    }
+                }
+                
                 if( is_array( $result ) && isset( $result[0] ) )
                 {
                     $resultItem = $result[0];
@@ -495,6 +505,14 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     {
                         $resultItem->errors = $resultItem->errors[0]->message;
                         eZDebug::writeError( $resultItem->errors, 'xrowSalesForceCRMPlugin::saveStandardObjectData::' . $class . '::' . $type );
+                    }
+                    else if( $salesforceini->hasVariable( 'Settings', 'AlwaysLog' ) )
+                    {
+                        if ( $salesforceini->variable( 'Settings', 'AlwaysLog' ) == "true" )
+                        {
+                            $log = "Success: " . (string)$resultItem->success . "Request-ID: " . (string)$resultItem->id . " Collection-ID:" . $collection->ID ." ContentobjectID: " .  $ContentObject->ContentObjectID . " Campaign ID: " . $ContentObject->Content["campaign_id"];
+                            eZLog::write($log, 'salesforce_success.log');
+                        }
                     }
                     return $resultItem;
                 }
