@@ -2,7 +2,10 @@
 
 #[Settings]
 #LoadBlock=SalesForceData_Test
-#AlwaysLog=false|true
+#AlwaysLog=enabled
+#SendErrorMails=enabled
+#ReceiverArray[]
+#ReceiverArray[]=xyz@test.com
 
 #ExportFieldName[]
 #ExportFieldName[e_mail_adresse]=Email

@@ -347,7 +347,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
         return $content;
     }
 
-    public static function sendExportData( $collection, $objectAttribute )
+    public static function sendExportData( $objectAttribute, $collection )
     {
         // export only if campaign ID is set
         if( isset( $objectAttribute->Content['campaign_id'] ) && (int)$objectAttribute->Content['campaign_id'] > 0 && $objectAttribute->Content['campaign_id'] != '' )
@@ -421,6 +421,10 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                         $result = self::saveStandardObjectData( $classObjects['Lead'], 'Lead', 'create', $objectAttribute, $collection );
                         if( $result->success !== false )
                         {
+                            if($ini->hasVariable('Settings', 'SendErrorMails') && $ini->variable('Settings', 'SendErrorMails') == 'enabled')
+                            {
+                                self::sendMail( $result, 'Lead' );
+                            }
                             if( isset( $classObjects['CampaignMember'] ) )
                                 $leadmember = $classObjects['CampaignMember'];
                             else
@@ -430,12 +434,24 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                             $result_member = self::saveStandardObjectData( $leadmember, 'CampaignMember', 'create' );
                             if( $result_member->success === false )
                             {
+                                if($ini->hasVariable('Settings', 'SendErrorMails') && $ini->variable('Settings', 'SendErrorMails') == 'enabled')
+                                {
+                                    self::sendMail( $result_member, 'CampaignMember ERROR' );
+                                }
                                 eZDebug::writeError( $result_member, __METHOD__ );
                                 return false;
+                            }
+                            if($ini->hasVariable('Settings', 'SendErrorMails') && $ini->variable('Settings', 'SendErrorMails') == 'enabled')
+                            {
+                                self::sendMail( $result_member, 'CampaignMember' );
                             }
                         }
                         else
                         {
+                            if($ini->hasVariable('Settings', 'SendErrorMails') && $ini->variable('Settings', 'SendErrorMails') == 'enabled')
+                            {
+                                self::sendMail( $result, 'Lead ERROR' );
+                            }
                             eZDebug::writeError( $result, __METHOD__ );
                             return false;
                         }
@@ -488,16 +504,14 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
             {
                 $connection = self::getConnection();
                 $result = $connection->$type( array( $StandardObject ), $class );
-                
-                if( $salesforceini->hasVariable( 'Settings', 'AlwaysLog' ) )
+                if( $ini->hasVariable( 'Settings', 'AlwaysLog' ) )
                 {
-                    if ( $salesforceini->variable( 'Settings', 'AlwaysLog' ) == "true" )
+                    if ( $ini->variable( 'Settings', 'AlwaysLog' ) == "enabled" )
                     {
                         $log = "Collection-ID:" . $collection->ID ." ContentobjectID: " .  $ContentObject->ContentObjectID . " Campaign ID: " . $ContentObject->Content["campaign_id"];
                         eZLog::write($log, 'salesforce_transactions.log');
                     }
                 }
-                
                 if( is_array( $result ) && isset( $result[0] ) )
                 {
                     $resultItem = $result[0];
@@ -506,9 +520,9 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                         $resultItem->errors = $resultItem->errors[0]->message;
                         eZDebug::writeError( $resultItem->errors, 'xrowSalesForceCRMPlugin::saveStandardObjectData::' . $class . '::' . $type );
                     }
-                    else if( $salesforceini->hasVariable( 'Settings', 'AlwaysLog' ) )
+                    else if( $ini->hasVariable( 'Settings', 'AlwaysLog' ) )
                     {
-                        if ( $salesforceini->variable( 'Settings', 'AlwaysLog' ) == "true" )
+                        if ( $ini->variable( 'Settings', 'AlwaysLog' ) == "enabled" )
                         {
                             $log = "Success: " . (string)$resultItem->success . "Request-ID: " . (string)$resultItem->id . " Collection-ID:" . $collection->ID ." ContentobjectID: " .  $ContentObject->ContentObjectID . " Campaign ID: " . $ContentObject->Content["campaign_id"];
                             eZLog::write($log, 'salesforce_success.log');
@@ -578,5 +592,90 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
             return 0;
         }
         return ($al > $bl) ? +1 : -1;
+    }
+
+    static function sendMail( $result, $subject )
+    {
+        $ini = eZINI::instance( 'site.ini' );
+        $salesforce_ini = eZINI::instance( 'salesforce.ini' );
+        if( $salesforce_ini->hasVariable( 'Settings', 'ReceiverArray' ) )
+        {
+            $transport = $ini->variable( 'MailSettings', 'Transport' );
+            $sender = $ini->variable( 'MailSettings', 'EmailSender' );
+            $receiverArray = $salesforce_ini->variable( 'Settings', 'ReceiverArray' );
+            ezcMailTools::setLineBreak( "\n" );
+            $mail = new ezcMailComposer();
+            $mail->charset = 'utf-8';
+            $mail->from = new ezcMailAddress( $sender, '', $mail->charset );
+            $mail->returnPath = $mail->from;
+            foreach ( $receiverArray as $receiver )
+            {
+                $mail->addTo( new ezcMailAddress( $receiver, '', $mail->charset ) );
+            }
+            $mailText = '';
+            $mailText = self::makeText( $result, $mailText );
+            $mail->subject = 'Salesforce ' . $subject;
+            $mail->subjectCharset = $mail->charset;
+            $mail->plainText = $mailText;
+            $mail->build();
+            $mailsettings = array();
+            $mailsettings["transport"] = $ini->variable( "MailSettings", "Transport" );
+            $mailsettings["server"] = $ini->variable( "MailSettings", "TransportServer" );
+            $mailsettings["port"] = $ini->variable( "MailSettings", "TransportPort" );
+            $mailsettings["user"] = $ini->variable( "MailSettings", "TransportUser" );
+            $mailsettings["password"] = $ini->variable( "MailSettings", "TransportPassword" );
+            $mailsettings["connectionType"] = $ini->variable( 'MailSettings', 'TransportConnectionType' );
+            if( trim( $mailsettings["port"] ) == "" )
+            {
+                $mailsettings["port"] = null;
+            }
+            if ( strtolower( $mailsettings["transport"]) == "smtp" )
+            {
+                $options = new ezcMailSmtpTransportOptions();
+                if( trim( $mailsettings["password"]) === "" )
+                {
+                    $transport = new ezcMailSmtpTransport( $mailsettings["server"], "", "", $mailsettings["port"], $options );
+                }
+                else
+                {
+                    $options->preferredAuthMethod = ezcMailSmtpTransport::AUTH_AUTO;
+                    $transport = new ezcMailSmtpTransport( $mailsettings["server"], $mailsettings["user"], $mailsettings["password"], $mailsettings["port"], $options );
+                }
+            }
+            else if ( strtolower($mailsettings["transport"]) == "sendmail" )
+            {
+                $transport = new ezcMailMtaTransport();
+            }
+            else
+            {
+                eZDebug::writeError( "Wrong Transport in MailSettings in", 'xrowFormGeneratorType::xrowSendFormMail' );
+                return null;
+            }
+            
+            //ezcmail sending
+            if ( strtolower($mailsettings["transport"]) != "file" )
+            {
+                try
+                {
+                    $transport->send( $mail );
+                }
+                catch ( ezcMailTransportException $e )
+                {
+                    eZDebug::writeError( $e->getMessage(), 'xrowFormGeneratorType::xrowSendFormMail' );
+                }
+            }
+        }
+    }
+
+    static function makeText($object, &$mailText)
+    {
+        foreach($object as $objectItemName =>  $objectItem)
+        {
+            if(is_string($objectItem))
+                $mailText .= $objectItemName . ":" . $objectItem . "\n";
+            else
+                self::makeText($objectItem, $mailText);
+        }
+        return $mailText;
     }
 }
