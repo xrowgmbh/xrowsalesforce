@@ -3,7 +3,7 @@
 #[Settings]
 #LoadBlock=SalesForceData_Test
 #AlwaysLog=enabled
-#SendErrorMails=enabled
+#SendLogMails=enabled
 #ReceiverArray[]
 #ReceiverArray[]=xyz@test.com
 

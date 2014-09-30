@@ -421,7 +421,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                         $result = self::saveStandardObjectData( $classObjects['Lead'], 'Lead', 'create', $objectAttribute, $collection );
                         if( $result->success !== false )
                         {
-                            if($ini->hasVariable('Settings', 'SendErrorMails') && $ini->variable('Settings', 'SendErrorMails') == 'enabled')
+                            if($ini->hasVariable('Settings', 'SendLogMails') && $ini->variable('Settings', 'SendLogMails') == 'enabled')
                             {
                                 self::sendMail( $result, 'Lead' );
                             }
@@ -431,24 +431,24 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                                 $leadmember = new stdClass;
                             $leadmember->CampaignId = $campaign_id;
                             $leadmember->LeadId = $result->id;
-                            $result_member = self::saveStandardObjectData( $leadmember, 'CampaignMember', 'create' );
+                            $result_member = self::saveStandardObjectData( $leadmember, 'CampaignMember', 'create', $objectAttribute, $collection );
                             if( $result_member->success === false )
                             {
-                                if($ini->hasVariable('Settings', 'SendErrorMails') && $ini->variable('Settings', 'SendErrorMails') == 'enabled')
+                                if($ini->hasVariable('Settings', 'SendLogMails') && $ini->variable('Settings', 'SendLogMails') == 'enabled')
                                 {
                                     self::sendMail( $result_member, 'CampaignMember ERROR' );
                                 }
                                 eZDebug::writeError( $result_member, __METHOD__ );
                                 return false;
                             }
-                            if($ini->hasVariable('Settings', 'SendErrorMails') && $ini->variable('Settings', 'SendErrorMails') == 'enabled')
+                            if($ini->hasVariable('Settings', 'SendLogMails') && $ini->variable('Settings', 'SendLogMails') == 'enabled')
                             {
                                 self::sendMail( $result_member, 'CampaignMember' );
                             }
                         }
                         else
                         {
-                            if($ini->hasVariable('Settings', 'SendErrorMails') && $ini->variable('Settings', 'SendErrorMails') == 'enabled')
+                            if($ini->hasVariable('Settings', 'SendLogMails') && $ini->variable('Settings', 'SendLogMails') == 'enabled')
                             {
                                 self::sendMail( $result, 'Lead ERROR' );
                             }
@@ -466,20 +466,6 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
         if( $StandardObject && $class != '' && ( $type == 'create' || $type == 'update' ) )
         {
             $ini = eZINI::instance( 'salesforce.ini' );
-            /*$exportFieldIntoField = array();
-            if( $ini->hasVariable( 'Settings', 'ExportFieldIntoField' ) )
-            {
-                $exportFieldIntoField = $ini->variable( 'Settings', 'ExportFieldIntoField' );
-                foreach( $StandardObject as $StandardObjectItemName => $StandardObjectItemValue )
-                {
-                    if( isset( $exportFieldIntoField[$StandardObjectItemName] ) )
-                    {
-                        $value = $StandardObjectItemValue;
-                        unset( $StandardObject->$StandardObjectItemName );
-                        $StandardObject->$exportFieldIntoField[$StandardObjectItemName] = $value;
-                    }
-                }
-            }*/
             if( $ini->hasVariable( 'UTMSettings', 'SaveInClass' ) )
             {
                 $SaveInClass = $ini->variable( 'UTMSettings', 'SaveInClass' );
@@ -508,7 +494,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                 {
                     if ( $ini->variable( 'Settings', 'AlwaysLog' ) == "enabled" )
                     {
-                        $log = "Collection-ID:" . $collection->ID ." ContentobjectID: " .  $ContentObject->ContentObjectID . " Campaign ID: " . $ContentObject->Content["campaign_id"];
+                        $log = "Class: " . $class . ", Type: " . $type . ", Collection-ID:" . $collection->ID .", ContentobjectID: " .  $ContentObject->ContentObjectID . ", Campaign ID: " . $ContentObject->Content["campaign_id"];
                         eZLog::write($log, 'salesforce_transactions.log');
                     }
                 }
@@ -524,7 +510,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     {
                         if ( $ini->variable( 'Settings', 'AlwaysLog' ) == "enabled" )
                         {
-                            $log = "Success: " . (string)$resultItem->success . "Request-ID: " . (string)$resultItem->id . " Collection-ID:" . $collection->ID ." ContentobjectID: " .  $ContentObject->ContentObjectID . " Campaign ID: " . $ContentObject->Content["campaign_id"];
+                            $log = "Success: " . (string)$resultItem->success . ", Request-ID: " . (string)$resultItem->id . " Collection-ID:" . $collection->ID ." ContentobjectID: " .  $ContentObject->ContentObjectID . " Campaign ID: " . $ContentObject->Content["campaign_id"];
                             eZLog::write($log, 'salesforce_success.log');
                         }
                     }
@@ -534,6 +520,8 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                 {
                     eZDebug::writeError( 'result is not set', 'xrowSalesForceCRMPlugin::saveStandardObjectData::' . $class . '::' . $type );
                     $resultError->errors = 'result is not set for class ' . $class . ' function ' . $type;
+                    $log = "ERROR: result is not set for class " . $class . " function " . $type . ', Collection-ID: ' . $collection->ID . ', ContentobjectID: ' .  $ContentObject->ContentObjectID . ', Campaign ID: ' . $ContentObject->Content["campaign_id"];
+                    eZLog::write($log, 'salesforce_error.log');
                     return $resultError;
                 }
             }
@@ -541,6 +529,8 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
             {
                 eZDebug::writeError( $e->getMessage(), 'xrowSalesForceCRMPlugin::saveStandardObjectData' );
                 $resultError->errors = $e->getMessage();
+                $log = "ERROR: Exception " . $e->getMessage() . ", Class: " . $class . " function " . $type . ', Collection-ID: ' . $collection->ID . ', ContentobjectID: ' .  $ContentObject->ContentObjectID . ', Campaign ID: ' . $ContentObject->Content["campaign_id"];
+                eZLog::write($log, 'salesforce_error.log');
                 return $resultError;
             }
         }
