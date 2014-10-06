@@ -421,10 +421,6 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                         $result = self::saveStandardObjectData( $classObjects['Lead'], 'Lead', 'create', $objectAttribute, $collection );
                         if( $result->success !== false )
                         {
-                            if($ini->hasVariable('Settings', 'SendLogMails') && $ini->variable('Settings', 'SendLogMails') == 'enabled')
-                            {
-                                self::sendMail( $result, 'Lead' );
-                            }
                             if( isset( $classObjects['CampaignMember'] ) )
                                 $leadmember = $classObjects['CampaignMember'];
                             else
@@ -440,10 +436,6 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                                 }
                                 eZDebug::writeError( $result_member, __METHOD__ );
                                 return false;
-                            }
-                            if($ini->hasVariable('Settings', 'SendLogMails') && $ini->variable('Settings', 'SendLogMails') == 'enabled')
-                            {
-                                self::sendMail( $result_member, 'CampaignMember' );
                             }
                         }
                         else
@@ -490,13 +482,10 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
             {
                 $connection = self::getConnection();
                 $result = $connection->$type( array( $StandardObject ), $class );
-                if( $ini->hasVariable( 'Settings', 'AlwaysLog' ) )
+                if ( $ini->hasVariable( 'Settings', 'AlwaysLog' ) && $ini->variable( 'Settings', 'AlwaysLog' ) == "enabled" )
                 {
-                    if ( $ini->variable( 'Settings', 'AlwaysLog' ) == "enabled" )
-                    {
-                        $log = "Class: " . $class . ", Type: " . $type . ", Collection-ID:" . $collection->ID .", ContentobjectID: " .  $ContentObject->ContentObjectID . ", Campaign ID: " . $ContentObject->Content["campaign_id"];
-                        eZLog::write($log, 'salesforce_transactions.log');
-                    }
+                    $log = "Class: " . $class . ", Type: " . $type . ", Collection-ID:" . $collection->ID .", ContentobjectID: " .  $ContentObject->ContentObjectID . ", Campaign ID: " . $ContentObject->Content["campaign_id"];
+                    eZLog::write($log, 'salesforce_transactions.log');
                 }
                 if( is_array( $result ) && isset( $result[0] ) )
                 {
@@ -505,14 +494,16 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     {
                         $resultItem->errors = $resultItem->errors[0]->message;
                         eZDebug::writeError( $resultItem->errors, 'xrowSalesForceCRMPlugin::saveStandardObjectData::' . $class . '::' . $type );
-                    }
-                    else if( $ini->hasVariable( 'Settings', 'AlwaysLog' ) )
-                    {
-                        if ( $ini->variable( 'Settings', 'AlwaysLog' ) == "enabled" )
+                        if ( $ini->hasVariable( 'Settings', 'AlwaysLog' ) && $ini->variable( 'Settings', 'AlwaysLog' ) == "enabled" )
                         {
-                            $log = "Success: " . (string)$resultItem->success . ", Request-ID: " . (string)$resultItem->id . " Collection-ID:" . $collection->ID ." ContentobjectID: " .  $ContentObject->ContentObjectID . " Campaign ID: " . $ContentObject->Content["campaign_id"];
-                            eZLog::write($log, 'salesforce_success.log');
+                            $log = "ERROR: Exception " . $resultItem->errors . ", Class: " . $class . " function " . $type . ', Collection-ID: ' . $collection->ID . ', ContentobjectID: ' .  $ContentObject->ContentObjectID . ', Campaign ID: ' . $ContentObject->Content["campaign_id"];
+                            eZLog::write($log, 'salesforce_error.log');
                         }
+                    }
+                    elseif( $ini->hasVariable( 'Settings', 'AlwaysLog' ) && $ini->variable( 'Settings', 'AlwaysLog' ) == "enabled" )
+                    {
+                        $log = "Success: " . (string)$resultItem->success . ", Request-ID: " . (string)$resultItem->id . " Collection-ID:" . $collection->ID ." ContentobjectID: " .  $ContentObject->ContentObjectID . " Campaign ID: " . $ContentObject->Content["campaign_id"];
+                        eZLog::write($log, 'salesforce_success.log');
                     }
                     return $resultItem;
                 }
@@ -520,8 +511,11 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                 {
                     eZDebug::writeError( 'result is not set', 'xrowSalesForceCRMPlugin::saveStandardObjectData::' . $class . '::' . $type );
                     $resultError->errors = 'result is not set for class ' . $class . ' function ' . $type;
-                    $log = "ERROR: result is not set for class " . $class . " function " . $type . ', Collection-ID: ' . $collection->ID . ', ContentobjectID: ' .  $ContentObject->ContentObjectID . ', Campaign ID: ' . $ContentObject->Content["campaign_id"];
-                    eZLog::write($log, 'salesforce_error.log');
+                    if ( $ini->hasVariable( 'Settings', 'AlwaysLog' ) && $ini->variable( 'Settings', 'AlwaysLog' ) == "enabled" )
+                    {
+                        $log = 'ERROR: ' . $resultError->errors . ', Collection-ID: ' . $collection->ID . ', ContentobjectID: ' .  $ContentObject->ContentObjectID . ', Campaign ID: ' . $ContentObject->Content["campaign_id"];
+                        eZLog::write($log, 'salesforce_error.log');
+                    }
                     return $resultError;
                 }
             }
@@ -529,8 +523,11 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
             {
                 eZDebug::writeError( $e->getMessage(), 'xrowSalesForceCRMPlugin::saveStandardObjectData' );
                 $resultError->errors = $e->getMessage();
-                $log = "ERROR: Exception " . $e->getMessage() . ", Class: " . $class . " function " . $type . ', Collection-ID: ' . $collection->ID . ', ContentobjectID: ' .  $ContentObject->ContentObjectID . ', Campaign ID: ' . $ContentObject->Content["campaign_id"];
-                eZLog::write($log, 'salesforce_error.log');
+                if ( $ini->hasVariable( 'Settings', 'AlwaysLog' ) && $ini->variable( 'Settings', 'AlwaysLog' ) == "enabled" )
+                {
+                    $log = "ERROR: Exception " . $e->getMessage() . ", Class: " . $class . " function " . $type . ', Collection-ID: ' . $collection->ID . ', ContentobjectID: ' .  $ContentObject->ContentObjectID . ', Campaign ID: ' . $ContentObject->Content["campaign_id"];
+                    eZLog::write($log, 'salesforce_error.log');
+                }
                 return $resultError;
             }
         }
