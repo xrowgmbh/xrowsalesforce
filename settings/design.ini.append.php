@@ -3,4 +3,7 @@
 [ExtensionSettings]
 DesignExtensions[]=xrowsalesforce
 
+[JavaScriptSettings]
+BackendJavaScriptList[]=xrowsalesforce.js
+
 */ ?>

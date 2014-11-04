@@ -259,7 +259,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
             case "crmfield:boolean":
             {
                 $data = false;
-                if( isset( $inputContentCollection[$item['name']] ) )
+                if( isset( $inputContentCollection[$item['name']] ) && $inputContentCollection[$item['name']] != "crmfield:boolean" )
                 {
                     $data = true;
                 }
