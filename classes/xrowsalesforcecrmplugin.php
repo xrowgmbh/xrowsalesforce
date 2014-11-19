@@ -477,6 +477,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     }
                 }
             }
+
             $resultError = new stdClass;
             try
             {

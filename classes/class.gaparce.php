@@ -40,7 +40,7 @@ class GA_Parse
     function ParseCookies(){
 
         // Parse __utmz cookie
-        list($domain_hash,$timestamp, $session_number, $campaign_numer, $campaign_data) = preg_split('/[\.]/', $_COOKIE["__utmz"], 5);
+        list($domain_hash, $timestamp, $session_number, $campaign_numer, $campaign_data) = preg_split('/[\.]/', $_COOKIE["__utmz"], 5);
 
         // Parse the campaign data
         $campaign_data = parse_str(strtr($campaign_data, "|", "&"));
@@ -69,17 +69,17 @@ class GA_Parse
         }
 
         // Parse the __utma Cookie
-        list($domain_hash,$random_id,$time_initial_visit,$time_beginning_previous_visit,$time_beginning_current_visit,$session_counter) = preg_split('/[\.]/', $_COOKIE["__utma"]);
+        list($domain_hash, $random_id, $time_initial_visit, $time_beginning_previous_visit, $time_beginning_current_visit, $session_counter) = preg_split('/[\.]/', $_COOKIE["__utma"]);
 
-        $this->first_visit = date("d M Y - H:i",$time_initial_visit);
-        $this->previous_visit = date("d M Y - H:i",$time_beginning_previous_visit);
-        $this->current_visit_started = date("d M Y - H:i",$time_beginning_current_visit);
+        $this->first_visit = date("d M Y - H:i", $time_initial_visit);
+        $this->previous_visit = date("d M Y - H:i", $time_beginning_previous_visit);
+        $this->current_visit_started = date("d M Y - H:i", $time_beginning_current_visit);
         $this->times_visited = $session_counter;
 
         // Parse the __utmb Cookie
         if(isset($_COOKIE["__utmb"]))
         {
-            list($domain_hash,$pages_viewed,$garbage,$time_beginning_current_session) = preg_split('/[\.]/', $_COOKIE["__utmb"]);
+            list($domain_hash, $pages_viewed, $garbage, $time_beginning_current_session) = preg_split('/[\.]/', $_COOKIE["__utmb"]);
             $this->pages_viewed = $pages_viewed;
         }
     }
