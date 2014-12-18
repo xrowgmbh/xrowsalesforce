@@ -1,15 +1,15 @@
 {if $crmFields|count|gt( 0 )}
 {ezscript_require( array( 'json2.js', 'xrowsalesforce.js' ) )}
 {ezcss_require( array( 'xrowsalesforce.css' ) )}
-{def $crmtypes = hash( 'string', hash( 'name', 'String', 'default', true(), 'required', true() ),
-                       'email', hash( 'name', 'Email', 'default', true(), 'required', true(), 'unique', true(), 'validation', true() ),
-                       'textarea', hash( 'name', 'Text', 'required', true() ),
-                       'phone', hash( 'name', 'Telephone number', 'default', true(), 'required', true(), 'validation', true() ),
+{def $crmtypes = hash( 'string', hash( 'name', 'String input field', 'default', true(), 'required', true() ),
+                       'email', hash( 'name', 'Email input field', 'default', true(), 'required', true(), 'unique', true(), 'validation', true() ),
+                       'textarea', hash( 'name', 'Text input field', 'required', true() ),
+                       'phone', hash( 'name', 'Telephone number input field', 'default', true(), 'required', true(), 'validation', true() ),
                        'boolean', hash( 'name', 'Checkbox', 'default', true(), 'required', true() ) )}
 {foreach $crmtypes as $type => $typeElements}
         <li class="xrow-form-element xrow-form-element-crmfield-{$type}" id="xrow-form-element-crmfield-{$type}-{$id}">
             <fieldset>
-                <legend>CRM: {concat( $typeElements.name, " input field" )|i18n( 'xrowformgenerator/edit' )} "yyyxrownamefieldyyy"</legend>
+                <legend>CRM: {$typeElements.name|i18n( 'xrowformgenerator/edit' )} "yyyxrownamefieldyyy"</legend>
                 <div class="block">
                     <div class="element xrow-trash-width"><img class="xrow-form-element-trash-button" src={"trash-icon-16x16.gif"|ezimage} alt="{"Delete form element."|i18n( 'xrowformgenerator/edit' )}"  title="{"Delete form element."|i18n( 'xrowformgenerator/edit' )}" width="16" height="16" /></div>
                     <div class="element xrow-form-element-width">
@@ -53,7 +53,7 @@
 {* options/picklist *}
         <li class="xrow-form-element xrow-form-element-crmfield-picklist" id="xrow-form-element-crmfield-picklist-{$id}">
             <fieldset>
-                <legend>CRM: {"Options input field"|i18n( 'xrowformgenerator/edit' )} "yyyxrownamefieldyyy"</legend>
+                <legend>CRM: {"Options"|i18n( 'xrowformgenerator/edit' )} "yyyxrownamefieldyyy"</legend>
                 <div class="block">
                     <div class="element xrow-trash-width"><img class="xrow-form-element-trash-button" src={"trash-icon-16x16.gif"|ezimage} alt="{"Delete form element."|i18n( 'xrowformgenerator/edit' )}"  title="{"Delete form element."|i18n( 'xrowformgenerator/edit' )}" width="16" height="16" /></div>
                     <div class="element xrow-form-element-width">
