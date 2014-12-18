@@ -1,50 +1,100 @@
-{def $labelName = $item.label|wash
+{def $labelName = ''
      $fieldName = $item.name
      $type = $item.type
-     $changeFieldType = array()}
+     $changeFieldType = array()
+     $labelOff = false()}
+{if is_set($item.label)}{set $labelName = $item.label|wash}{/if}
 {if ezini_hasvariable( 'Settings', 'ChangeFieldType', 'salesforce.ini' )}
     {set $changeFieldType = ezini( 'Settings', 'ChangeFieldType', 'salesforce.ini' )}
 {/if}
 {if is_set( $changeFieldType[$fieldName] )}
     {set $type = concat( 'crmfield:', $changeFieldType[$fieldName] )}
 {/if}
+{if is_set($labelOffOverwrite)}
+    {set $labelOff = $labelOffOverwrite}
+{/if}
 {switch match=$type}
     {case match="crmfield:picklist"}
         {if $item.option_array|count|gt( 0 )}
-            <label class="options">{$labelName}{if $item.req}<abbr class="required" title="{"Input required."|i18n( 'kernel/classes/datatypes' )}"> * </abbr>{/if}</label>
-            <select class="xrow-form-{$item.type}{cond( $item.class|ne(''), concat( ' ', $item.class ), '')}" name="XrowFormInputCRM[{$id}][{$key}][{$fieldName}]">
-                <option value="0"></option>
-            {foreach $item.option_array as $opt_key => $opt_item}
-                <option value="{$opt_item.value|wash}"{if $opt_item.def} selected="selected"{/if} title="{$opt_item.name|wash}">{$opt_item.name|wash}</option>
-            {/foreach}
-            </select>
-            <p class="input_desc">{cond( is_set( $item.desc ), $item.desc, '')}</p>
+            {switch match=$labelName}
+                {case match="Land"}{def $emptyText = "Bitte wählen Sie Ihr Land aus."}{/case}
+                {case}{def $emptyText = concat("Bitte wählen Sie Ihre ", $labelName, " aus.")}{/case}
+            {/switch}
+            {include uri='design:content/datatype/fields.tpl' 
+                     fieldType=options
+                     itemNameOverwrite=$labelName
+                     overwriteNameValue=concat('XrowFormInputTypeCRM[', $id, '][', $key, '][', $fieldName, ']')
+                     emptyText=$emptyText
+                     labelOff=$labelOff
+                     underFieldType=select-one
+                     startWithEmptyValue=true()
+                     autocompleteOff=true()
+                     cssClass=concat("xrow-form-", $item.type, cond( $item.class|ne(''), concat( ' ', $item.class ), ''))}
+            {undef $emptyText}
         {/if}
     {/case}
     {case match="crmfield:boolean"}
-        <label for="checkbox:{$id}:{$key}"{if $labelName|trim|eq('')} class="emptyname"{/if}><input id="checkbox:{$id}:{$key}" type="checkbox" name="XrowFormInputCRM[{$id}][{$key}][{$fieldName}]" value="1" autocomplete="off" {if $item.def}checked="checked" {/if}/>{if $labelName|trim|ne('')}&nbsp;{$labelName}{if $item.req}<abbr class="required" title="{"Input required."|i18n( 'kernel/classes/datatypes' )}"> * </abbr>{/if}{/if}</label>
-        <div class="form-checkbox-padding{if $labelName|trim|eq('')} emptyname{/if}">{cond( is_set( $item.desc ), $item.desc, '')}{if $labelName|trim|eq('')}{if $item.req}<abbr class="required" title="{"Input required."|i18n( 'kernel/classes/datatypes' )}"> * </abbr>{/if}{/if}</div>
+        {def $emptyText = ''}
+        {if $item.desc|contains('Datenschutz')}{set $emptyText = concat("Bitte akzeptieren Sie die Datenschutzbedingungen.") $labelName = ''}{/if}
+        {include uri='design:content/datatype/fields.tpl' 
+                 fieldType=checkbox
+                 itemNameOverwrite=$labelName
+                 overwriteNameValue=concat('XrowFormInputTypeCRM[', $id, '][', $key, '][', $fieldName, ']')
+                 emptyText=$emptyText
+                 labelOff=$labelOff
+                 autocompleteOff=true()}
+        {undef $emptyText}
     {/case}
     {case match="crmfield:phone"}
-        <label for="telephonenumber:{$id}:{$key}:number">{$labelName}{if $item.req}<abbr class="required" title="{"Input required."|i18n( 'kernel/classes/datatypes' )}"> * </abbr>{/if}</label>
-        <input{if not( $content.has_error )} placeholder="{$item.def|wash}"{else} value="{$item.def|wash}"{/if} id="telephonenumber:{$id}:{$key}" type="tel" autocomplete="off" name="XrowFormInputCRM[{$id}][{$key}][{$fieldName}]" class="box xrow-form-{$item.type}{cond( $item.class|ne(''), concat( ' ', $item.class ), '')}" aria-required="true" /><br/>
-        <p class="input_desc">{cond( is_set( $item.desc ), $item.desc, '')}</p>
+        {include uri='design:content/datatype/fields.tpl'
+                 fieldType=telephonenumber
+                 itemNameOverwrite=$labelName
+                 overwriteNameValue=concat('XrowFormInputTypeCRM[', $id, '][', $key, '][', $fieldName, ']')
+                 emptyText="Bitte geben Sie Ihre Telefonnummer ein."
+                 invalidText="Bitte geben Sie eine korrekte Telefonnummer ein."
+                 labelOff=$labelOff
+                 autocompleteOff=true()
+                 cssClass=concat("box xrow-form-", $item.type, cond( $item.class|ne(''), concat( ' ', $item.class ), ''))}
     {/case}
     {case match="crmfield:email"}
-        <label for="email:{$id}:{$key}">{$labelName}{if $item.req}<abbr class="required" title="{"Input required."|i18n( 'kernel/classes/datatypes' )}"> * </abbr>{/if}</label>
-        <input id="email:{$id}:{$key}" type="email" autocomplete="off" name="XrowFormInputCRM[{$id}][{$key}][{$fieldName}]" class="box xrow-form-{$item.type}{cond( $item.class|ne(''), concat( ' ', $item.class ), '')}" aria-required="true" {if not($content.has_error)} placeholder="{$item.def|wash}" {else} value="{$item.def|wash}" {/if} />
-        <p class="input_desc">{cond( is_set( $item.desc ), $item.desc, '')}</p>
+        {include uri='design:content/datatype/fields.tpl' 
+                 fieldType=email
+                 itemNameOverwrite=$labelName
+                 overwriteNameValue=concat('XrowFormInputTypeCRM[', $id, '][', $key, '][', $fieldName, ']')
+                 emptyText="Bitte geben Sie Ihre E-Mail-Adresse ein."
+                 invalidText="Bitte geben Sie eine korrekte E-Mail-Adresse ein."
+                 labelOff=$labelOff
+                 autocompleteOff=true()
+                 cssClass=concat("box xrow-form-", $item.type, cond( $item.class|ne(''), concat( ' ', $item.class ), ''))}
     {/case}
     {case match="crmfield:textarea"}
-        <label for="text:{$id}:{$key}">{$labelName}{if $item.req}<abbr class="required" title="{"Input required."|i18n( 'kernel/classes/datatypes' )}"> * </abbr>{/if}</label>
-        <textarea cols="70" rows="10" id="text:{$id}:{$key}" name="XrowFormInputCRM[{$id}][{$key}]" class="box xrow-form-{$item.type}{cond( $item.class|ne(''), concat( ' ', $item.class ), '')}" aria-required="true"  {if not($content.has_error)}placeholder="{$item.def|wash}">{else}>{$item.def|wash}{/if}</textarea>
-        <p class="input_desc">{cond( is_set( $item.desc ), $item.desc, '')}</p>
+        {include uri='design:content/datatype/fields.tpl' 
+                 fieldType='textarea'
+                 itemNameOverwrite=$labelName
+                 overwriteNameValue=concat('XrowFormInputTypeCRM[', $id, '][', $key, '][', $fieldName, ']')
+                 emptyText=concat("Bitte geben Sie ", $labelName, " ein.")
+                 labelOff=$labelOff
+                 cssClass=concat("box xrow-form-", $item.type, cond( $item.class|ne(''), concat( ' ', $item.class ), ''))
+                 cols=70
+                 rows=10
+                 autocompleteOff=true()}v
     {/case}
     {case}
-        <label for="description:{$id}:{$key}">{$labelName}{if $item.req}<abbr class="required" title="{"Input required."|i18n( 'kernel/classes/datatypes' )}"> * </abbr>{/if}</label>
-        <input id="description:{$id}:{$key}" type="text" autocomplete="off" name="XrowFormInputCRM[{$id}][{$key}][{$fieldName}]" class="box xrow-form-{$item.type}{cond( $item.class|ne(''), concat( ' ', $item.class ), '')}" aria-required="true" {if not($content.has_error)} placeholder="{$item.def|wash}" {else} value="{$item.def|wash}" {/if} />
-        <p class="input_desc">{cond( is_set( $item.desc ), $item.desc, '')}</p>
+        {switch match=$item.name}
+            {case match="Vorname"}{def $emptyText = "Bitte geben Sie Ihren Vornamen ein."}{/case}
+            {case match="Nachname"}{def $emptyText = "Bitte geben Sie Ihren Nachnamen ein."}{/case}
+            {case}{def $emptyText = concat("Bitte geben Sie Ihre ", $labelName, " ein.")}{/case}
+        {/switch}
+        {include uri='design:content/datatype/fields.tpl' 
+                 fieldType='text'
+                 itemNameOverwrite=$labelName
+                 overwriteNameValue=concat('XrowFormInputTypeCRM[', $id, '][', $key, '][', $fieldName, ']')
+                 emptyText=$emptyText
+                 labelOff=$labelOff
+                 autocompleteOff=true()
+                 cssClass=concat("box xrow-form-", $item.type, cond( $item.class|ne(''), concat( ' ', $item.class ), ''))}
+        {undef $emptyText}
     {/case}
 {/switch}
 <input class="formhidden" type="hidden" name="XrowFormInputTypeCRM[{$id}][{$key}][{$fieldName}]" value="{$item.type}" />
-{undef $labelName $fieldName $type $changeFieldType}
+{undef $labelName $fieldName $type $changeFieldType $labelOff}

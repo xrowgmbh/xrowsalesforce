@@ -269,7 +269,10 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     {
                         $content['form_elements'][$key]['error'] = true;
                         $content['has_error'] = true;
-                        $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "You need to select this checkbox." );
+                        if(isset($item['label']))
+                            $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "You need to select this checkbox." );
+                        else
+                            $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['name'], 'urlalias' ) )] = ezpI18n::tr( 'kernel/classes/datatypes', "You need to select this checkbox." );
                     }
                 }
                 $content['form_elements'][$key]['def'] = $data;
