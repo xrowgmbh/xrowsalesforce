@@ -23,7 +23,7 @@
             {include uri='design:content/datatype/fields.tpl' 
                      fieldType=options
                      itemNameOverwrite=$labelName
-                     overwriteNameValue=concat('XrowFormInputTypeCRM[', $id, '][', $key, '][', $fieldName, ']')
+                     overwriteNameValue=concat('XrowFormInputCRM[', $id, '][', $key, '][', $fieldName, ']')
                      emptyText=$emptyText
                      labelOff=$labelOff
                      underFieldType=select-one
@@ -39,7 +39,7 @@
         {include uri='design:content/datatype/fields.tpl' 
                  fieldType=checkbox
                  itemNameOverwrite=$labelName
-                 overwriteNameValue=concat('XrowFormInputTypeCRM[', $id, '][', $key, '][', $fieldName, ']')
+                 overwriteNameValue=concat('XrowFormInputCRM[', $id, '][', $key, '][', $fieldName, ']')
                  emptyText=$emptyText
                  labelOff=$labelOff
                  autocompleteOff=true()}
@@ -49,7 +49,7 @@
         {include uri='design:content/datatype/fields.tpl'
                  fieldType=telephonenumber
                  itemNameOverwrite=$labelName
-                 overwriteNameValue=concat('XrowFormInputTypeCRM[', $id, '][', $key, '][', $fieldName, ']')
+                 overwriteNameValue=concat('XrowFormInputCRM[', $id, '][', $key, '][', $fieldName, ']')
                  emptyText="Bitte geben Sie Ihre Telefonnummer ein."
                  invalidText="Bitte geben Sie eine korrekte Telefonnummer ein."
                  labelOff=$labelOff
@@ -60,7 +60,7 @@
         {include uri='design:content/datatype/fields.tpl' 
                  fieldType=email
                  itemNameOverwrite=$labelName
-                 overwriteNameValue=concat('XrowFormInputTypeCRM[', $id, '][', $key, '][', $fieldName, ']')
+                 overwriteNameValue=concat('XrowFormInputCRM[', $id, '][', $key, '][', $fieldName, ']')
                  emptyText="Bitte geben Sie Ihre E-Mail-Adresse ein."
                  invalidText="Bitte geben Sie eine korrekte E-Mail-Adresse ein."
                  labelOff=$labelOff
@@ -71,7 +71,7 @@
         {include uri='design:content/datatype/fields.tpl' 
                  fieldType='textarea'
                  itemNameOverwrite=$labelName
-                 overwriteNameValue=concat('XrowFormInputTypeCRM[', $id, '][', $key, '][', $fieldName, ']')
+                 overwriteNameValue=concat('XrowFormInputCRM[', $id, '][', $key, '][', $fieldName, ']')
                  emptyText=concat("Bitte geben Sie ", $labelName, " ein.")
                  labelOff=$labelOff
                  cssClass=concat("box xrow-form-", $item.type, cond( $item.class|ne(''), concat( ' ', $item.class ), ''))
@@ -88,7 +88,7 @@
         {include uri='design:content/datatype/fields.tpl' 
                  fieldType='text'
                  itemNameOverwrite=$labelName
-                 overwriteNameValue=concat('XrowFormInputTypeCRM[', $id, '][', $key, '][', $fieldName, ']')
+                 overwriteNameValue=concat('XrowFormInputCRM[', $id, '][', $key, '][', $fieldName, ']')
                  emptyText=$emptyText
                  labelOff=$labelOff
                  autocompleteOff=true()

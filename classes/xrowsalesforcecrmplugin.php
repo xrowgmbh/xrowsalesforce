@@ -214,7 +214,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                         {
                             $content['form_elements'][$key]['error'] = true;
                             $content['has_error'] = true;
-                            $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "E-mail address is not valid." );
+                            $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Email address is not valid." );
                         }
                         elseif( $item['unique'] == true )
                         {
@@ -233,7 +233,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     {
                         $content['form_elements'][$key]['error'] = true;
                         $content['has_error'] = true;
-                        $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "E-mail address is not valid." );
+                        $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Email address is not valid." );
                     }
                     elseif( $item['unique'] == true ) 
                     {
@@ -269,7 +269,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     {
                         $content['form_elements'][$key]['error'] = true;
                         $content['has_error'] = true;
-                        if(isset($item['label']))
+                        if(isset($item['label']) && $item['label'] != 'undefined')
                             $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "You need to select this checkbox." );
                         else
                             $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['name'], 'urlalias' ) )] = ezpI18n::tr( 'kernel/classes/datatypes', "You need to select this checkbox." );
