@@ -77,12 +77,12 @@
                  cssClass=concat("box xrow-form-", $item.type, cond( $item.class|ne(''), concat( ' ', $item.class ), ''))
                  cols=70
                  rows=10
-                 autocompleteOff=true()}v
+                 autocompleteOff=true()}
     {/case}
     {case}
         {switch match=$item.name}
-            {case match="Vorname"}{def $emptyText = "Bitte geben Sie Ihren Vornamen ein."}{/case}
-            {case match="Nachname"}{def $emptyText = "Bitte geben Sie Ihren Nachnamen ein."}{/case}
+            {case match="FirstName"}{def $emptyText = "Bitte geben Sie Ihren Vornamen ein."}{/case}
+            {case match="LastName"}{def $emptyText = "Bitte geben Sie Ihren Nachnamen ein."}{/case}
             {case}{def $emptyText = concat("Bitte geben Sie Ihre ", $labelName, " ein.")}{/case}
         {/switch}
         {include uri='design:content/datatype/fields.tpl' 
