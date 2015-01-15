@@ -173,42 +173,73 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
         return $data;
     }
 
-    public function setAttributeDataForCollectCRMField( $content, $key, $item, $inputContentCollection, $contentobject_id, $trans )
+    public function setAttributeDataForCollectCRMField( $content, $key, $item, $inputContentCollection, $contentobject_id, $trans, $httpFieldType )
     {
-        switch ( $item['type'] )
+        if($httpFieldType[$item['name']] == 'crmfield:hidden')
         {
-            case "crmfield:string":
-            case "crmfield:textarea":
+            $data = '';
+            if( isset( $inputContentCollection[$item['name']] ) )
             {
-                $data = '';
-                if( isset( $inputContentCollection[$item['name']] ) )
-                {
-                    $data = trim( $inputContentCollection[$item['name']] );
-                }
-                if ( $item['req'] == true && trim( $data ) == '' )
-                {
-                    $content['form_elements'][$key]['error'] = true;
-                    $content['has_error'] = true;
-                    $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Input required." );
-                }
-                $content['form_elements'][$key]['def'] = $data;
-            }break;
-            case "crmfield:email":
+                $data = trim( $inputContentCollection[$item['name']] );
+            }
+            $content['form_elements'][$key]['def'] = $data;
+            $content['form_elements'][$key]['type'] = 'crmfield:hidden';
+        }
+        else
+        {
+            switch ( $item['type'] )
             {
-                $data = '';
-                if( isset( $inputContentCollection[$item['name']] ) )
+                case "crmfield:string":
+                case "crmfield:textarea":
                 {
-                    $data = trim( $inputContentCollection[$item['name']] );
-                }
-                if ( $item['req'] == true )
-                {
-                    if ( $data == '' )
+                    $data = '';
+                    if( isset( $inputContentCollection[$item['name']] ) )
+                    {
+                        $data = trim( $inputContentCollection[$item['name']] );
+                    }
+                    if ( $item['req'] == true && trim( $data ) == '' )
                     {
                         $content['form_elements'][$key]['error'] = true;
                         $content['has_error'] = true;
                         $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Input required." );
                     }
-                    elseif( $item['val'] == true )
+                    $content['form_elements'][$key]['def'] = $data;
+                }break;
+                case "crmfield:email":
+                {
+                    $data = '';
+                    if( isset( $inputContentCollection[$item['name']] ) )
+                    {
+                        $data = trim( $inputContentCollection[$item['name']] );
+                    }
+                    if ( $item['req'] == true )
+                    {
+                        if ( $data == '' )
+                        {
+                            $content['form_elements'][$key]['error'] = true;
+                            $content['has_error'] = true;
+                            $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Input required." );
+                        }
+                        elseif( $item['val'] == true )
+                        {
+                            if ( !xrowFormGeneratorType::validate( $data ) )
+                            {
+                                $content['form_elements'][$key]['error'] = true;
+                                $content['has_error'] = true;
+                                $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Email address is not valid." );
+                            }
+                            elseif( $item['unique'] == true )
+                            {
+                                if ( !xrowFormGeneratorType::email_unique( $data, $contentobject_id ) )
+                                {
+                                    $content['form_elements'][$key]['error'] = true;
+                                    $content['has_error'] = true;
+                                    $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Your email was already submitted to us. You can't use the form twice." );
+                                }
+                            }
+                        }
+                    }
+                    elseif ( $item['val'] == true && $data != '' )
                     {
                         if ( !xrowFormGeneratorType::validate( $data ) )
                         {
@@ -216,7 +247,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                             $content['has_error'] = true;
                             $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Email address is not valid." );
                         }
-                        elseif( $item['unique'] == true )
+                        elseif( $item['unique'] == true ) 
                         {
                             if ( !xrowFormGeneratorType::email_unique( $data, $contentobject_id ) )
                             {
@@ -226,126 +257,108 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                             }
                         }
                     }
-                }
-                elseif ( $item['val'] == true && $data != '' )
-                {
-                    if ( !xrowFormGeneratorType::validate( $data ) )
-                    {
-                        $content['form_elements'][$key]['error'] = true;
-                        $content['has_error'] = true;
-                        $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Email address is not valid." );
-                    }
-                    elseif( $item['unique'] == true ) 
+                    elseif( $item['unique'] == true && $data != '' )
                     {
                         if ( !xrowFormGeneratorType::email_unique( $data, $contentobject_id ) )
                         {
                             $content['form_elements'][$key]['error'] = true;
                             $content['has_error'] = true;
                             $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Your email was already submitted to us. You can't use the form twice." );
-                        }
+                        }   
                     }
-                }
-                elseif( $item['unique'] == true && $data != '' )
+                    $content['form_elements'][$key]['def'] = $data;
+                }break;
+                case "crmfield:boolean":
                 {
-                    if ( !xrowFormGeneratorType::email_unique( $data, $contentobject_id ) )
+                    $data = false;
+                    if( isset( $inputContentCollection[$item['name']] ) && $inputContentCollection[$item['name']] != "crmfield:boolean" )
                     {
-                        $content['form_elements'][$key]['error'] = true;
-                        $content['has_error'] = true;
-                        $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Your email was already submitted to us. You can't use the form twice." );
-                    }   
-                }
-                $content['form_elements'][$key]['def'] = $data;
-            }break;
-            case "crmfield:boolean":
-            {
-                $data = false;
-                if( isset( $inputContentCollection[$item['name']] ) && $inputContentCollection[$item['name']] != "crmfield:boolean" )
-                {
-                    $data = true;
-                }
-                if ( $item['req'] == true )
-                {
-                    if ( !$data )
-                    {
-                        $content['form_elements'][$key]['error'] = true;
-                        $content['has_error'] = true;
-                        if(isset($item['label']) && $item['label'] != 'undefined')
-                            $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "You need to select this checkbox." );
-                        else
-                            $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['name'], 'urlalias' ) )] = ezpI18n::tr( 'kernel/classes/datatypes', "You need to select this checkbox." );
-                    }
-                }
-                $content['form_elements'][$key]['def'] = $data;
-            }break;
-            case "crmfield:phone":
-            {
-                $data = '';
-                $checkTelephone = false;
-                if( isset( $inputContentCollection[$item['name']] ) )
-                {
-                    $data = trim( $inputContentCollection[$item['name']] );
-                }
-                if ( $item['req'] == true )
-                {
-                    if ( $data == '' )
-                    {
-                        $content['form_elements'][$key]['error'] = true;
-                        $content['has_error'] = true;
-                        $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Input required." );
-                    }
-                    else
-                    {
-                        $checkTelephone = true;
-                    }
-                }
-                
-                if( $checkTelephone )
-                {
-                    if( !xrowFormGeneratorType::telephone_validate( $data ) || strlen( $data ) >= 25 )
-                    {
-                        $content['form_elements'][$key]['error'] = true;
-                        $content['has_error'] = true;
-                        $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Please enter a valid phone number." );
-                    }
-                }
-                $content['form_elements'][$key]['def'] = $data;
-            }break;
-            case "crmfield:picklist":
-            {
-                if( isset( $inputContentCollection[$item['name']] ) )
-                {
-                    $data = $inputContentCollection[$item['name']];
-                    $optSelected = false;
-                    
-                    foreach ( $item['option_array'] as $optKey => $optItem )
-                    {
-                        $content['form_elements'][$key]['option_array'][$optKey]['def'] = false;
-                        if ( $optItem['name'] == $data )
-                        {
-                            $content['form_elements'][$key]['option_array'][$optKey]['def'] = true;
-                            $optSelected = true;
-                        }
+                        $data = true;
                     }
                     if ( $item['req'] == true )
                     {
-                        if ( !$optSelected )
+                        if ( !$data )
+                        {
+                            $content['form_elements'][$key]['error'] = true;
+                            $content['has_error'] = true;
+                            if(isset($item['label']) && $item['label'] != 'undefined')
+                                $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "You need to select this checkbox." );
+                            else
+                                $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['name'], 'urlalias' ) )] = ezpI18n::tr( 'kernel/classes/datatypes', "You need to select this checkbox." );
+                        }
+                    }
+                    $content['form_elements'][$key]['def'] = $data;
+                }break;
+                case "crmfield:phone":
+                {
+                    $data = '';
+                    $checkTelephone = false;
+                    if( isset( $inputContentCollection[$item['name']] ) )
+                    {
+                        $data = trim( $inputContentCollection[$item['name']] );
+                    }
+                    if ( $item['req'] == true )
+                    {
+                        if ( $data == '' )
+                        {
+                            $content['form_elements'][$key]['error'] = true;
+                            $content['has_error'] = true;
+                            $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Input required." );
+                        }
+                        else
+                        {
+                            $checkTelephone = true;
+                        }
+                    }
+                    
+                    if( $checkTelephone )
+                    {
+                        if( !xrowFormGeneratorType::telephone_validate( $data ) || strlen( $data ) >= 25 )
+                        {
+                            $content['form_elements'][$key]['error'] = true;
+                            $content['has_error'] = true;
+                            $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Please enter a valid phone number." );
+                        }
+                    }
+                    $content['form_elements'][$key]['def'] = $data;
+                }break;
+                case "crmfield:picklist":
+                {
+                    if( isset( $inputContentCollection[$item['name']] ) )
+                    {
+                        $data = $inputContentCollection[$item['name']];
+                        $optSelected = false;
+                        
+                        foreach ( $item['option_array'] as $optKey => $optItem )
+                        {
+                            $content['form_elements'][$key]['option_array'][$optKey]['def'] = false;
+                            if ( $optItem['name'] == $data )
+                            {
+                                $content['form_elements'][$key]['option_array'][$optKey]['def'] = true;
+                                $optSelected = true;
+                            }
+                        }
+                        if ( $item['req'] == true )
+                        {
+                            if ( !$optSelected )
+                            {
+                                $content['form_elements'][$key]['error'] = true;
+                                $content['has_error'] = true;
+                                $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Please select at least one option." );
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if ( $item['req'] == true )
                         {
                             $content['form_elements'][$key]['error'] = true;
                             $content['has_error'] = true;
                             $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Please select at least one option." );
                         }
                     }
-                }
-                else
-                {
-                    if ( $item['req'] == true )
-                    {
-                        $content['form_elements'][$key]['error'] = true;
-                        $content['has_error'] = true;
-                        $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Please select at least one option." );
-                    }
-                }
-            }break;
+                }break;
+            }
         }
         return $content;
     }
@@ -392,6 +405,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                         case "crmfield:email":
                         case "crmfield:boolean":
                         case "crmfield:textarea":
+                        case "crmfield:hidden":
                         {
                             $name = $item['name'];
                             $classObjects[$crmClass]->$name = $item['def'];
@@ -417,6 +431,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     // Company ist ein Pflichtfeld. Soll hier nachträglich gesetzt werden, falls es noch nicht gefüllt wurde
                     $classObjects['Lead']->Company = 'nicht angegeben';
                 }
+                
                 if( $foundCRMField )
                 {
                     if( isset( $classObjects['Lead'] ) )
