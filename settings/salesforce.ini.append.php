@@ -35,6 +35,15 @@
 #ToClass=CampaignMember
 #ToField=f42_Land__c
 
+#[UTMSettings]
+#SaveInClass=CampaignMember
+
+#[UTMSettings_CampaignMember]
+#SaveFields[]
+#SaveFields[UACContent]=utm_content
+#SaveFields[UACMedium]=utm_medium
+#SaveFields[UACSource]=utm_source
+
 
 #[SalesForceData_Test]
 #Username=xy@z.sandbox
