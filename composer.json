@@ -2,7 +2,7 @@
     "name": "xrow/xrowsalesforce",
     "description": "Interface for Salesforce via xrowformgenerator",
     "require": {
-        "developerforce/force.com-toolkit-for-php": "~1.0@dev"
+        "developerforce/force.com-toolkit-for-php": "1.0.*@dev"
     },
     "license": "MIT",
     "authors": [
