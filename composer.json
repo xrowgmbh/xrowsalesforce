@@ -12,6 +12,5 @@
             "homepage": "http://www.xrow.de",
             "role": "Developer"
         }
-    ],
-    "minimum-stability": "dev"
+    ]
 }
