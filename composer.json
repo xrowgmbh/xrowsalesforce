@@ -1,0 +1,19 @@
+{
+    "name": "xrow/xrowsalesforce",
+    "description": "Interface for Salesforce via xrowformgenerator",
+    "type": "interface",
+    "keywords": [ "salesforce", "interface", "xrow", "ezpublish" ],
+    "homepage": "http://www.xrow.de",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Kristina Ebel",
+            "email": "kristina@xrow.de",
+            "homepage": "http://www.xrow.de",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "developerforce/force.com-toolkit-for-php": "1.0.*@dev"
+    }
+}
