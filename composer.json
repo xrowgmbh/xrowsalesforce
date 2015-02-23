@@ -13,10 +13,5 @@
             "role": "Developer"
         }
     ],
-    "minimum-stability": "dev",
-    "extra": {
-        "branch-alias": {
-            "dev-master": "1.4-dev"
-        }
-    }
+    "minimum-stability": "dev"
 }
