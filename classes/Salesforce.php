@@ -1,10 +1,5 @@
 <?php
 
-//namespace XROW\Salesforce;
-
-//use eZINI;
-//use SforceEnterpriseClient;
-
 class Salesforce
 {
     private static $connection = null;
@@ -20,23 +15,25 @@ class Salesforce
         {
             return self::$connection;
         }
-        $ini = eZINI::instance( "salesforce.ini" );
-        $loadBlock = $ini->variable( 'Settings', 'LoadBlock' );
-        $dataBlock = $ini->BlockValues[$loadBlock];
-        if( file_exists( $dataBlock['File'] ) )
+        $container = ezpKernel::instance()->getServiceContainer();
+        $wsdlName = $container->getParameter('salesforce.wsdl');
+        $wsdl = $container->getParameter('kernel.root_dir').'/../src/wuv/SalesforceBundle/Resources/config/'.$wsdlName;
+        $username = $container->getParameter('salesforce.username');
+        $password = $container->getParameter('salesforce.password');
+        $token = $container->getParameter('salesforce.token');
+        if( file_exists( $wsdl ) )
         {
             self::$connection = new SforceEnterpriseClient();
-            self::$connection->createConnection( $dataBlock['File'] );
+            self::$connection->createConnection( $wsdl );
 
             if ( self::$session and self::$location )
             {
-                
                 self::$connection->setEndpoint( self::$location );
                 self::$connection->setSessionHeader( self::$session );
             }
             else
             {
-                self::$connection->login( $dataBlock['Username'], $dataBlock['Password'] . $dataBlock['Token'] );
+                self::$connection->login( $username, $password . $token );
                 self::$location = self::$connection->getLocation();
                 self::$session = self::$connection->getSessionId();
             }
@@ -44,7 +41,7 @@ class Salesforce
         }
         else
         {
-            eZDebug::writeError( $dataBlock['File'] . ' does not exist.', __METHOD__ );
+            eZDebug::writeError( $wsdl . ' does not exist.', __METHOD__ );
             return false;
         }
     }
