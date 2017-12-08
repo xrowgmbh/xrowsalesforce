@@ -31,7 +31,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                 {
                     $sortCampaignsDropDown[$record->Type] = $record->Type;
                 }
-                
+
                 if( count( $sortCampaignsDropDown ) > 0 )
                 {
                     $campaignArray['optiongroups'] = array();
@@ -84,7 +84,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                             if( $salesforceini->hasGroup( 'ShowOnlyFieldsInFormGenerator_' . $class ) )
                             {
                                 $showOnlyFields = $salesforceini->variable( 'ShowOnlyFieldsInFormGenerator_' . $class, 'ShowOnlyFieldsInFormGenerator' );
-                                foreach( $sObject->fields as $field ) 
+                                foreach( $sObject->fields as $field )
                                 {
                                     if( $field->deprecatedAndHidden === false && in_array( $field->name, $showOnlyFields ) )
                                     {
@@ -104,7 +104,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                             }
                             else
                             {
-                                foreach( $sObject->fields as $field ) 
+                                foreach( $sObject->fields as $field )
                                 {
                                     if( $field->deprecatedAndHidden === false )
                                     {
@@ -247,7 +247,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                             $content['has_error'] = true;
                             $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Email address is not valid." );
                         }
-                        elseif( $item['unique'] == true ) 
+                        elseif( $item['unique'] == true )
                         {
                             if ( !xrowFormGeneratorType::email_unique( $data, $contentobject_id ) )
                             {
@@ -264,7 +264,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                             $content['form_elements'][$key]['error'] = true;
                             $content['has_error'] = true;
                             $content['error_array'][mb_strtolower( $trans->transformByGroup( $item['label'], 'urlalias' ) )] = $item['label'] . ": " . ezpI18n::tr( 'kernel/classes/datatypes', "Your email was already submitted to us. You can't use the form twice." );
-                        }   
+                        }
                     }
                     $content['form_elements'][$key]['def'] = $data;
                 }break;
@@ -310,7 +310,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                             $checkTelephone = true;
                         }
                     }
-                    
+
                     if( $checkTelephone )
                     {
                         if( !xrowFormGeneratorType::telephone_validate( $data ) || strlen( $data ) >= 25 )
@@ -328,7 +328,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     {
                         $data = $inputContentCollection[$item['name']];
                         $optSelected = false;
-                        
+
                         foreach ( $item['option_array'] as $optKey => $optItem )
                         {
                             $content['form_elements'][$key]['option_array'][$optKey]['def'] = false;
@@ -431,7 +431,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     // Company ist ein Pflichtfeld. Soll hier nachträglich gesetzt werden, falls es noch nicht gefüllt wurde
                     $classObjects['Lead']->Company = 'nicht angegeben';
                 }
-                
+
                 if( $foundCRMField )
                 {
                     if( isset( $classObjects['Lead'] ) )
@@ -497,13 +497,16 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
             }
 
             $resultError = new stdClass;
+            $contentId = (isset($ContentObject) && $ContentObject !== false) ? $ContentObject->ContentObjectID : 0;
+            $campaignId = (isset($ContentObject) && $ContentObject !== false) ? $ContentObject->Content["campaign_id"] : 0;
+            $collectionId = (isset($collection) && $collection !== false) ? $collection->ID : 0;
             try
             {
                 $connection = self::getConnection();
                 $result = $connection->$type( array( $StandardObject ), $class );
                 if ( $ini->hasVariable( 'Settings', 'AlwaysLog' ) && $ini->variable( 'Settings', 'AlwaysLog' ) == "enabled" )
                 {
-                    $log = "Class: " . $class . ", Type: " . $type . ", Collection-ID:" . $collection->ID .", ContentobjectID: " .  $ContentObject->ContentObjectID . ", Campaign ID: " . $ContentObject->Content["campaign_id"];
+                    $log = "Class: " . $class . ", Type: " . $type . ", Collection-ID: " . $collectionId .", ContentobjectID: " .  $contentId . ", Campaign ID: " . $campaignId;
                     eZLog::write($log, 'salesforce_transactions.log');
                 }
                 if( is_array( $result ) && isset( $result[0] ) )
@@ -515,13 +518,13 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                         eZDebug::writeError( $resultItem->errors, 'xrowSalesForceCRMPlugin::saveStandardObjectData::' . $class . '::' . $type );
                         if ( $ini->hasVariable( 'Settings', 'AlwaysLog' ) && $ini->variable( 'Settings', 'AlwaysLog' ) == "enabled" )
                         {
-                            $log = "ERROR: Exception " . $resultItem->errors . ", Class: " . $class . " function " . $type . ', Collection-ID: ' . $collection->ID . ', ContentobjectID: ' .  $ContentObject->ContentObjectID . ', Campaign ID: ' . $ContentObject->Content["campaign_id"];
+                            $log = "ERROR: Exception " . $resultItem->errors . ", Class: " . $class . " function " . $type . ', Collection-ID: ' . $collectionId . ', ContentobjectID: ' .  $contentId . ', Campaign ID: ' . $campaignId;
                             eZLog::write($log, 'salesforce_error.log');
                         }
                     }
                     elseif( $ini->hasVariable( 'Settings', 'AlwaysLog' ) && $ini->variable( 'Settings', 'AlwaysLog' ) == "enabled" )
                     {
-                        $log = "Success: " . (string)$resultItem->success . ", Request-ID: " . (string)$resultItem->id . " Collection-ID:" . $collection->ID ." ContentobjectID: " .  $ContentObject->ContentObjectID . " Campaign ID: " . $ContentObject->Content["campaign_id"];
+                        $log = "Success: " . (string)$resultItem->success . ", Request-ID: " . (string)$resultItem->id . " Collection-ID: " . $collectionId ." ContentobjectID: " .  $contentId . " Campaign ID: " . $campaignId;
                         eZLog::write($log, 'salesforce_success.log');
                     }
                     return $resultItem;
@@ -532,7 +535,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                     $resultError->errors = 'result is not set for class ' . $class . ' function ' . $type;
                     if ( $ini->hasVariable( 'Settings', 'AlwaysLog' ) && $ini->variable( 'Settings', 'AlwaysLog' ) == "enabled" )
                     {
-                        $log = 'ERROR: ' . $resultError->errors . ', Collection-ID: ' . $collection->ID . ', ContentobjectID: ' .  $ContentObject->ContentObjectID . ', Campaign ID: ' . $ContentObject->Content["campaign_id"];
+                        $log = 'ERROR: ' . $resultError->errors . ', Collection-ID: ' . $collectionId . ', ContentobjectID: ' .  $contentId . ', Campaign ID: ' . $campaignId;
                         eZLog::write($log, 'salesforce_error.log');
                     }
                     return $resultError;
@@ -544,7 +547,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                 $resultError->errors = $e->getMessage();
                 if ( $ini->hasVariable( 'Settings', 'AlwaysLog' ) && $ini->variable( 'Settings', 'AlwaysLog' ) == "enabled" )
                 {
-                    $log = "ERROR: Exception " . $e->getMessage() . ", Class: " . $class . " function " . $type . ', Collection-ID: ' . $collection->ID . ', ContentobjectID: ' .  $ContentObject->ContentObjectID . ', Campaign ID: ' . $ContentObject->Content["campaign_id"];
+                    $log = "ERROR: Exception " . $e->getMessage() . ", Class: " . $class . " function " . $type . ', Collection-ID: ' . $collectionId . ', ContentobjectID: ' .  $contentId . ', Campaign ID: ' . $campaignId;
                     eZLog::write($log, 'salesforce_error.log');
                 }
                 return $resultError;
@@ -657,7 +660,7 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
                 eZDebug::writeError( "Wrong Transport in MailSettings in", 'xrowFormGeneratorType::xrowSendFormMail' );
                 return null;
             }
-            
+
             //ezcmail sending
             if ( strtolower($mailsettings["transport"]) != "file" )
             {
