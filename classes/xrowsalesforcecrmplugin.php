@@ -603,15 +603,26 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
         return ($al > $bl) ? +1 : -1;
     }
 
+    /**
+     * Email Salesforce objects to a list of users specified in salesforce.ini
+     *
+     * @param mixed $result
+     * @param string $subject
+     * @return null
+     */
     static function sendMail( $result, $subject )
     {
         $ini = eZINI::instance( 'site.ini' );
         $salesforce_ini = eZINI::instance( 'salesforce.ini' );
         if( $salesforce_ini->hasVariable( 'Settings', 'ReceiverArray' ) )
         {
+            $receiverArray = $salesforce_ini->variable( 'Settings', 'ReceiverArray' );
+            if (empty($receiverArray)) {
+                return;
+            }
+
             $transport = $ini->variable( 'MailSettings', 'Transport' );
             $sender = $ini->variable( 'MailSettings', 'EmailSender' );
-            $receiverArray = $salesforce_ini->variable( 'Settings', 'ReceiverArray' );
             ezcMailTools::setLineBreak( "\n" );
             $mail = new ezcMailComposer();
             $mail->charset = 'utf-8';
@@ -676,6 +687,13 @@ class xrowSalesForceCRMPlugin implements xrowFormCRM
         }
     }
 
+    /**
+     * Append a (possibly nested) associative array onto a string.
+     *
+     * @param type $object
+     * @param string $mailText
+     * @return string
+     */
     static function makeText($object, &$mailText)
     {
         foreach($object as $objectItemName =>  $objectItem)
